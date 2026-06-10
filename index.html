@@ -7,6 +7,7 @@
   <title>BaustromFuchs | Baustrom-Abrechnung ohne Excel-Chaos</title>
   <link rel="icon" type="image/png" href="fav_icon.png">
   <link rel="apple-touch-icon" href="fav_icon.png">
+  <script defer src="https://cloud.umami.is/script.js" data-website-id="13037e14-e7a7-4451-821a-69657e96732e"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -556,8 +557,19 @@
       let activeModal = null;
       let lastFocusedElement = null;
 
-      function track(eventName) {
-        console.log(eventName);
+      function track(eventName, eventData) {
+        if (!eventName) return;
+
+        const data = {
+          page: 'landing',
+          ...eventData
+        };
+
+        if (window.umami && typeof window.umami.track === 'function') {
+          window.umami.track(eventName, data);
+        }
+
+        console.log('Umami event', eventName, data);
       }
 
       function closeModal() {
@@ -588,12 +600,20 @@
         siteHeader.classList.toggle('is-scrolled', window.scrollY > 48);
       }
 
+      function getFormMode(form) {
+        const action = form?.getAttribute('action') || '';
+        return action.includes('/echo') ? 'echo' : 'production';
+      }
+
       document.querySelectorAll('[data-event]').forEach((element) => {
         element.addEventListener('click', () => {
           const eventName = element.getAttribute('data-event');
           const scrollTarget = element.getAttribute('data-scroll-target');
           if (eventName) {
-            track(eventName);
+            track(eventName, {
+              label: element.innerText.trim(),
+              target: scrollTarget || 'none'
+            });
           }
           if (scrollTarget) {
             const target = document.querySelector(scrollTarget);
@@ -627,14 +647,21 @@
             consentCheckbox.setCustomValidity('Bitte stimmen Sie der Verarbeitung zu, bevor Sie die Anfrage senden.');
             consentCheckbox.reportValidity();
             consentCheckbox.focus();
-            track('Lead_Form_Blocked_No_Consent');
+            track('Lead_Form_Blocked_No_Consent', {
+              package: document.getElementById('package')?.value || 'not_selected',
+              form_mode: getFormMode(leadForm)
+            });
             return;
           }
 
           if (consentCheckbox) {
             consentCheckbox.setCustomValidity('');
           }
-          track('Lead_Form_Submitted');
+          track('Lead_Form_Submitted', {
+            package: document.getElementById('package')?.value || 'not_selected',
+            has_message: Boolean(document.getElementById('message')?.value.trim()),
+            form_mode: getFormMode(leadForm)
+          });
         });
       }
 
