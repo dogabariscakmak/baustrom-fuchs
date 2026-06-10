@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="BaustromFuchs verwandelt Excel-Zaehlerlisten und Hauptrechnungen in transparente Stromweiterleitungs-PDFs fuer deutsche Baustellen.">
+  <title>BaustromFuchs | Baustrom-Abrechnung ohne Excel-Chaos</title>
+  <link rel="icon" type="image/png" href="fav_icon.png">
+  <link rel="apple-touch-icon" href="fav_icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            slateInk: '#0f172a',
+            foxOrange: '#f97316',
+            paper: '#f8fafc',
+            mint: '#10b981',
+            skyDeep: '#0369a1'
+          },
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'ui-sans-serif', 'system-ui', 'sans-serif']
+          },
+          boxShadow: {
+            clean: '0 24px 70px rgba(15, 23, 42, 0.14)',
+            soft: '0 16px 40px rgba(15, 23, 42, 0.10)'
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --hero-image: url("https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=2200&q=82");
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+      background: #f8fafc;
+      color: #0f172a;
+    }
+
+    .hero-surface {
+      background-image:
+        linear-gradient(90deg, rgba(15, 23, 42, 0.96) 0%, rgba(15, 23, 42, 0.88) 46%, rgba(15, 23, 42, 0.55) 100%),
+        var(--hero-image);
+      background-size: cover;
+      background-position: center;
+    }
+
+    .focus-ring:focus-visible {
+      outline: 3px solid rgba(249, 115, 22, 0.58);
+      outline-offset: 3px;
+    }
+
+    .dashboard-grid {
+      background-image:
+        linear-gradient(rgba(15, 23, 42, 0.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(15, 23, 42, 0.07) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+
+    .modal-open {
+      overflow: hidden;
+    }
+
+    .site-header {
+      background: rgba(15, 23, 42, 0.94);
+      border-color: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+      transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease, color 180ms ease;
+    }
+
+    .site-header .nav-link {
+      color: #e2e8f0;
+      transition: color 180ms ease;
+    }
+
+    .site-header .nav-link:hover {
+      color: #ffffff;
+    }
+
+    .site-header.is-scrolled {
+      background: rgba(255, 255, 255, 0.96);
+      border-color: #e2e8f0;
+      color: #0f172a;
+      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.10);
+    }
+
+    .site-header.is-scrolled .nav-link {
+      color: #334155;
+    }
+
+    .site-header.is-scrolled .nav-link:hover {
+      color: #f97316;
+    }
+
+    .brand-mark {
+      background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%);
+      border: 1px solid rgba(249, 115, 22, 0.42);
+      box-shadow: 0 12px 28px rgba(249, 115, 22, 0.20);
+    }
+
+    .site-header.is-scrolled .brand-mark {
+      border-color: rgba(15, 23, 42, 0.10);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.10);
+    }
+  </style>
+</head>
+<body class="antialiased">
+  <header id="site-header" class="site-header fixed inset-x-0 top-0 z-40 border-b backdrop-blur">
+    <nav class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8" aria-label="Hauptnavigation">
+      <a href="#top" class="focus-ring flex items-center gap-3 rounded-md" aria-label="BaustromFuchs Startseite">
+        <span class="brand-mark grid h-10 w-14 place-items-center rounded-md">
+          <img src="logo.png" alt="" class="h-9 w-12 object-contain">
+        </span>
+        <span class="text-lg font-extrabold tracking-normal">BaustromFuchs</span>
+      </a>
+
+      <div class="hidden items-center gap-8 text-sm font-semibold md:flex">
+        <a class="nav-link focus-ring rounded-md" href="#features">Features</a>
+        <a class="nav-link focus-ring rounded-md" href="#preise">Preise</a>
+        <a class="nav-link focus-ring rounded-md" href="#ablauf">Ablauf</a>
+      </div>
+
+      <button type="button" data-event="CTA_Nav_Clicked" data-scroll-target="#lead-form" class="focus-ring inline-flex items-center gap-2 rounded-md bg-foxOrange px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-orange-500/25 transition hover:bg-orange-600">
+        <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+        <span class="hidden sm:inline">Closed Beta beitreten</span>
+        <span class="sm:hidden">Beta</span>
+      </button>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero-surface relative isolate overflow-hidden pt-20 text-white sm:pt-24">
+      <div class="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-paper to-transparent" aria-hidden="true"></div>
+      <div class="mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 pb-4 pt-6 sm:px-6 sm:pb-12 sm:pt-10 lg:grid-cols-[1.03fr_0.97fr] lg:px-8 lg:py-20">
+        <div class="min-w-0 max-w-3xl">
+          <div class="mb-5 inline-flex max-w-full items-center gap-2 rounded-md border border-white/20 bg-white/10 px-3 py-2 text-sm font-semibold text-orange-100 backdrop-blur">
+            <i class="fa-solid fa-file-excel text-foxOrange" aria-hidden="true"></i>
+            Excel bleibt. Abrechnung wird audit-ready.
+          </div>
+
+          <h1 class="max-w-4xl text-4xl font-extrabold leading-tight tracking-normal sm:text-5xl lg:text-6xl">
+            Schluss mit dem Baustrom-Abrechnungschaos!
+          </h1>
+
+          <p class="mt-5 max-w-2xl text-base leading-7 text-slate-100 sm:text-xl sm:leading-8">
+            Verwandeln Sie Ihre w&ouml;chentliche Excel-Z&auml;hlerliste per Drag-and-Drop in DSGVO- &amp; EnWG-konform vorbereitete Stromweiterleitungs-PDFs f&uuml;r alle Subunternehmer. Transparent, pr&uuml;fbar und in weniger als 2 Minuten.
+          </p>
+
+          <div class="mt-6 grid grid-cols-3 gap-2 text-xs font-semibold text-slate-100 sm:gap-3 sm:text-sm">
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-check text-mint" aria-hidden="true"></i>
+              Wandlerfaktor
+            </div>
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-check text-mint" aria-hidden="true"></i>
+              Netzverluste
+            </div>
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-check text-mint" aria-hidden="true"></i>
+              UStG &sect; 14 PDFs
+            </div>
+          </div>
+
+          <form id="lead-form" action="https://submit-form.com/tHjMFrkXc" method="POST" class="mt-7 max-w-2xl rounded-md border border-white/20 bg-white p-3 text-slateInk shadow-clean" aria-label="Kostenlosen Testzugang anfragen">
+            <input type="hidden" name="recipient" value="dogabaris.cakmak@gmail.com">
+            <input type="hidden" name="source" value="BaustromFuchs Landing Page">
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <label for="name" class="sr-only">Name</label>
+                <input id="name" name="name" type="text" required autocomplete="name" placeholder="Name" class="focus-ring h-12 w-full rounded-md border border-slate-200 px-4 text-base text-slateInk placeholder:text-slate-400">
+              </div>
+              <div>
+                <label for="company" class="sr-only">Unternehmen</label>
+                <input id="company" name="company" type="text" required autocomplete="organization" placeholder="Unternehmen" class="focus-ring h-12 w-full rounded-md border border-slate-200 px-4 text-base text-slateInk placeholder:text-slate-400">
+              </div>
+              <div>
+                <label for="email" class="sr-only">Geschaeftliche E-Mail-Adresse</label>
+                <input id="email" name="email" type="email" required autocomplete="email" placeholder="geschaeftliche E-Mail" class="focus-ring h-12 w-full rounded-md border border-slate-200 px-4 text-base text-slateInk placeholder:text-slate-400">
+              </div>
+              <div>
+                <label for="package" class="sr-only">Paket</label>
+                <select id="package" name="package" required class="focus-ring h-12 w-full rounded-md border border-slate-200 bg-white px-4 text-base text-slateInk">
+                  <option value="">Paket auswaehlen</option>
+                  <option value="Basis">Basis - EUR 99 / Monat</option>
+                  <option value="Pro">Pro - EUR 249 / Monat</option>
+                  <option value="Enterprise">Enterprise - Individuelles Angebot</option>
+                </select>
+              </div>
+              <div class="sm:col-span-2">
+                <label for="message" class="sr-only">Nachricht optional</label>
+                <textarea id="message" name="message" rows="3" placeholder="Nachricht optional" class="focus-ring min-h-12 w-full resize-y rounded-md border border-slate-200 px-4 py-3 text-base text-slateInk placeholder:text-slate-400"></textarea>
+              </div>
+              <button type="submit" data-event="CTA_Hero_Clicked" class="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-md bg-foxOrange px-5 text-sm font-extrabold text-white shadow-lg shadow-orange-500/25 transition hover:bg-orange-600 sm:col-span-2">
+                <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+                Anfrage senden
+              </button>
+            </div>
+
+            <div class="mt-3 flex items-start gap-3 px-1 text-left text-xs leading-5 text-slate-600">
+              <input id="consent" name="consent" type="checkbox" required aria-describedby="consent-error" class="focus-ring mt-1 h-4 w-4 rounded border-slate-300 text-foxOrange">
+              <div>
+                <label for="consent">Ich stimme zu, dass BaustromFuchs meine Angaben zur Kontaktaufnahme verarbeitet.</label>
+                <p id="consent-error" class="mt-2 hidden font-bold text-red-600">Bitte stimmen Sie der Verarbeitung zu, bevor Sie die Anfrage senden.</p>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <div class="relative mx-auto hidden min-w-0 w-full max-w-xl md:block lg:max-w-none" aria-label="Produktvorschau BaustromFuchs">
+          <div class="dashboard-grid min-w-0 rounded-md border border-white/25 bg-slateInk/45 p-4 text-slateInk shadow-clean backdrop-blur">
+            <div class="flex items-center justify-between border-b border-white/35 pb-4">
+              <div>
+                <p class="text-xs font-bold uppercase tracking-[0.18em] text-orange-200">Baustelle K&ouml;ln-West</p>
+                <p class="mt-1 text-xl font-extrabold text-white">Strom-Weiterleitung</p>
+              </div>
+              <div class="rounded-md bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700">
+                Audit-ready
+              </div>
+            </div>
+
+            <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div class="rounded-md border border-slate-200 bg-white p-3">
+                <p class="text-xs font-semibold text-slate-500">Hauptrechnung</p>
+                <p class="mt-2 text-2xl font-extrabold">42.860 kWh</p>
+              </div>
+              <div class="rounded-md border border-slate-200 bg-white p-3">
+                <p class="text-xs font-semibold text-slate-500">Verlustanteil</p>
+                <p class="mt-2 text-2xl font-extrabold text-skyDeep">7,4%</p>
+              </div>
+              <div class="rounded-md border border-slate-200 bg-white p-3">
+                <p class="text-xs font-semibold text-slate-500">Export</p>
+                <p class="mt-2 text-2xl font-extrabold text-foxOrange">18 PDFs</p>
+              </div>
+            </div>
+
+            <div class="mt-4 rounded-md border border-slate-200 bg-white p-4">
+              <div class="mb-4 flex items-center justify-between gap-3">
+                <p class="font-bold">Subunternehmer-Abgleich</p>
+                <span class="text-xs font-semibold text-slate-500">Abrechnungsperiode Mai</span>
+              </div>
+              <div class="space-y-3">
+                <div>
+                  <div class="mb-1 flex justify-between text-xs font-semibold">
+                    <span>Elektro Meyer GmbH</span>
+                    <span>9.420 kWh</span>
+                  </div>
+                  <div class="h-2 rounded-full bg-slate-100"><div class="h-2 w-[72%] rounded-full bg-foxOrange"></div></div>
+                </div>
+                <div>
+                  <div class="mb-1 flex justify-between text-xs font-semibold">
+                    <span>Kran &amp; Hebetechnik AG</span>
+                    <span>6.180 kWh</span>
+                  </div>
+                  <div class="h-2 rounded-full bg-slate-100"><div class="h-2 w-[47%] rounded-full bg-skyDeep"></div></div>
+                </div>
+                <div>
+                  <div class="mb-1 flex justify-between text-xs font-semibold">
+                    <span>Innenausbau Schmitt</span>
+                    <span>3.940 kWh</span>
+                  </div>
+                  <div class="h-2 rounded-full bg-slate-100"><div class="h-2 w-[31%] rounded-full bg-mint"></div></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div class="rounded-md border border-orange-200 bg-orange-50 p-3 text-sm">
+                <p class="font-bold text-orange-900"><i class="fa-solid fa-triangle-exclamation mr-2" aria-hidden="true"></i>MessEG-Hinweis</p>
+                <p class="mt-1 text-orange-900/80">2 Z&auml;hler laufen in 46 Tagen aus der Eichfrist.</p>
+              </div>
+              <div class="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm">
+                <p class="font-bold text-emerald-900"><i class="fa-solid fa-shield-halved mr-2" aria-hidden="true"></i>Pr&uuml;fspur</p>
+                <p class="mt-1 text-emerald-900/80">Formel, Faktor und PDF-Ausgabe dokumentiert.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="bg-paper pb-16 pt-8 sm:pb-20 sm:pt-10" aria-labelledby="problem-title">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="max-w-3xl">
+          <p class="text-sm font-extrabold uppercase tracking-[0.18em] text-foxOrange">Problem und L&ouml;sung</p>
+          <h2 id="problem-title" class="mt-3 text-3xl font-extrabold tracking-normal text-slateInk sm:text-4xl">Aus Wochenlisten werden belastbare Stromweiterleitungen.</h2>
+          <p class="mt-4 text-lg leading-8 text-slate-600">BaustromFuchs ersetzt keine Baustellenroutine. Es macht die bestehende Excel-Praxis nachvollziehbar, berechnet fair und erstellt pro Subunternehmer eine pr&uuml;fbare PDF-Ausgabe.</p>
+        </div>
+
+        <div class="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <article class="rounded-md border border-red-100 bg-white p-6 shadow-soft">
+            <div class="flex items-center gap-3">
+              <span class="grid h-11 w-11 place-items-center rounded-md bg-red-50 text-red-600">
+                <i class="fa-solid fa-table-cells" aria-hidden="true"></i>
+              </span>
+              <h3 class="text-xl font-extrabold">Heute: Excel-Risiko</h3>
+            </div>
+            <ul class="mt-6 space-y-4 text-slate-600">
+              <li class="flex gap-3"><i class="fa-solid fa-xmark mt-1 text-red-500" aria-hidden="true"></i><span>Freitags abgelesene Z&auml;hlerst&auml;nde landen in lokalen Dateien ohne stabile Pr&uuml;fspur.</span></li>
+              <li class="flex gap-3"><i class="fa-solid fa-xmark mt-1 text-red-500" aria-hidden="true"></i><span>Wandlerfaktor, Blindstrom, Netz- und Trafoverluste werden zu leicht pauschalisiert.</span></li>
+              <li class="flex gap-3"><i class="fa-solid fa-xmark mt-1 text-red-500" aria-hidden="true"></i><span>Subunternehmer reklamieren, weil die Herleitung auf Rechnungsniveau nicht transparent ist.</span></li>
+            </ul>
+          </article>
+
+          <article class="rounded-md border border-emerald-100 bg-white p-6 shadow-soft">
+            <div class="flex items-center gap-3">
+              <span class="grid h-11 w-11 place-items-center rounded-md bg-emerald-50 text-emerald-700">
+                <i class="fa-solid fa-file-invoice-dollar" aria-hidden="true"></i>
+              </span>
+              <h3 class="text-xl font-extrabold">Mit BaustromFuchs: klare Zuordnung</h3>
+            </div>
+            <ul class="mt-6 space-y-4 text-slate-600">
+              <li class="flex gap-3"><i class="fa-solid fa-check mt-1 text-emerald-600" aria-hidden="true"></i><span>Excel/CSV hochladen und die Hauptrechnung als PDF oder Rechnungswerte erg&auml;nzen.</span></li>
+              <li class="flex gap-3"><i class="fa-solid fa-check mt-1 text-emerald-600" aria-hidden="true"></i><span>Verbrauchsdeltas, aktive Tage und Verlustanteile werden nachvollziehbar berechnet.</span></li>
+              <li class="flex gap-3"><i class="fa-solid fa-check mt-1 text-emerald-600" aria-hidden="true"></i><span>Ausgabe als ZIP mit Strom-Weiterleitungs-PDFs, Briefkopf und Compliance-Hinweisen.</span></li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="ablauf" class="bg-white py-16 sm:py-20" aria-labelledby="workflow-title">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
+          <div>
+            <p class="text-sm font-extrabold uppercase tracking-[0.18em] text-foxOrange">Ablauf</p>
+            <h2 id="workflow-title" class="mt-3 text-3xl font-extrabold tracking-normal text-slateInk sm:text-4xl">Drei Schritte von der Baustelle zur PDF-Ausgabe.</h2>
+            <p class="mt-4 text-lg leading-8 text-slate-600">Der Kern bleibt schlank: vorhandene Daten rein, technische und kaufm&auml;nnische Plausibilit&auml;t pr&uuml;fen, transparente Dokumente exportieren.</p>
+          </div>
+
+          <div class="grid grid-cols-1 gap-4">
+            <article class="rounded-md border border-slate-200 bg-paper p-5">
+              <div class="flex gap-4">
+                <span class="grid h-12 w-12 shrink-0 place-items-center rounded-md bg-slateInk text-lg font-extrabold text-white">1</span>
+                <div>
+                  <h3 class="text-lg font-extrabold">Excel/CSV der Z&auml;hlerst&auml;nde hochladen.</h3>
+                  <p class="mt-2 leading-7 text-slate-600">Spalten f&uuml;r Subunternehmer, Subz&auml;hler, Start-/Endstand, aktive Tage und Wandlerfaktor werden validiert.</p>
+                </div>
+              </div>
+            </article>
+            <article class="rounded-md border border-slate-200 bg-paper p-5">
+              <div class="flex gap-4">
+                <span class="grid h-12 w-12 shrink-0 place-items-center rounded-md bg-slateInk text-lg font-extrabold text-white">2</span>
+                <div>
+                  <h3 class="text-lg font-extrabold">Hauptrechnung einlesen &amp; automatische Verlustberechnung.</h3>
+                  <p class="mt-2 leading-7 text-slate-600">Der Gesamtverbrauch wird gegen die Subz&auml;hler reconciled; Blindstrom, Netzverluste und Grundpreisanteile bleiben sichtbar.</p>
+                </div>
+              </div>
+            </article>
+            <article class="rounded-md border border-slate-200 bg-paper p-5">
+              <div class="flex gap-4">
+                <span class="grid h-12 w-12 shrink-0 place-items-center rounded-md bg-foxOrange text-lg font-extrabold text-white">3</span>
+                <div>
+                  <h3 class="text-lg font-extrabold">PDFs nach UStG &sect; 14 exportieren.</h3>
+                  <p class="mt-2 leading-7 text-slate-600">Jede Ausgabe enth&auml;lt Empf&auml;nger, Zeitraum, Formelbasis, Steuerpositionen als Platzhalter und eine nachvollziehbare Pr&uuml;fspur.</p>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="features" class="bg-paper py-16 sm:py-20" aria-labelledby="features-title">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="max-w-3xl">
+          <p class="text-sm font-extrabold uppercase tracking-[0.18em] text-foxOrange">Features</p>
+          <h2 id="features-title" class="mt-3 text-3xl font-extrabold tracking-normal text-slateInk sm:text-4xl">F&uuml;r Baustrom-Abrechnung gebaut, nicht f&uuml;r generisches Projektmanagement.</h2>
+        </div>
+
+        <div class="mt-10 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+          <article class="rounded-md border border-slate-200 bg-white p-6 shadow-soft">
+            <span class="grid h-12 w-12 place-items-center rounded-md bg-orange-50 text-foxOrange"><i class="fa-solid fa-gauge-high" aria-hidden="true"></i></span>
+            <h3 class="mt-5 text-lg font-extrabold">Wandlerfaktor-Automation</h3>
+            <p class="mt-3 leading-7 text-slate-600">Rohwerte werden mit hinterlegten Transformationsfaktoren berechnet, bevor Kosten verteilt werden.</p>
+          </article>
+          <article class="rounded-md border border-slate-200 bg-white p-6 shadow-soft">
+            <span class="grid h-12 w-12 place-items-center rounded-md bg-sky-50 text-skyDeep"><i class="fa-solid fa-chart-line" aria-hidden="true"></i></span>
+            <h3 class="mt-5 text-lg font-extrabold">Automatischer Preisabgleich</h3>
+            <p class="mt-3 leading-7 text-slate-600">Arbeitspreis, Grundpreis und periodenbezogene Rechnungswerte werden sauber in die Allokation &uuml;bernommen.</p>
+          </article>
+          <article class="rounded-md border border-slate-200 bg-white p-6 shadow-soft">
+            <span class="grid h-12 w-12 place-items-center rounded-md bg-emerald-50 text-emerald-700"><i class="fa-solid fa-building" aria-hidden="true"></i></span>
+            <h3 class="mt-5 text-lg font-extrabold">Eigene Briefk&ouml;pfe</h3>
+            <p class="mt-3 leading-7 text-slate-600">PDFs werden f&uuml;r Ihre Firmenidentit&auml;t vorbereitet und passen in etablierte Rechnungsprozesse.</p>
+          </article>
+          <article class="rounded-md border border-slate-200 bg-white p-6 shadow-soft">
+            <span class="grid h-12 w-12 place-items-center rounded-md bg-violet-50 text-violet-700"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i></span>
+            <h3 class="mt-5 text-lg font-extrabold">EnWG/UStG-Workflow</h3>
+            <p class="mt-3 leading-7 text-slate-600">Ausgaben sind als Kostenweiterleitung vorbereitet und enthalten steuerliche Platzhalter zur fachlichen Pr&uuml;fung.</p>
+          </article>
+          <article class="rounded-md border border-slate-200 bg-white p-6 shadow-soft">
+            <span class="grid h-12 w-12 place-items-center rounded-md bg-amber-50 text-amber-700"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i></span>
+            <h3 class="mt-5 text-lg font-extrabold">MessEG-Warnungen</h3>
+            <p class="mt-3 leading-7 text-slate-600">Eichfristen und Z&auml;hlerstatus werden als Risiko markiert, bevor sie die Abrechnung angreifbar machen.</p>
+          </article>
+          <article class="rounded-md border border-slate-200 bg-white p-6 shadow-soft">
+            <span class="grid h-12 w-12 place-items-center rounded-md bg-slate-100 text-slateInk"><i class="fa-solid fa-plug-circle-bolt" aria-hidden="true"></i></span>
+            <h3 class="mt-5 text-lg font-extrabold">SAP/DATEV-Anschluss</h3>
+            <p class="mt-3 leading-7 text-slate-600">Enterprise-Teams k&ouml;nnen Exporte und API-Anbindungen f&uuml;r ERP-nahe Prozesse einplanen.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="preise" class="bg-white py-16 sm:py-20" aria-labelledby="pricing-title">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-3xl text-center">
+          <p class="text-sm font-extrabold uppercase tracking-[0.18em] text-foxOrange">Preise</p>
+          <h2 id="pricing-title" class="mt-3 text-3xl font-extrabold tracking-normal text-slateInk sm:text-4xl">Nach aktiven Baustellen, nicht nach Sitzpl&auml;tzen.</h2>
+          <p class="mt-4 text-lg leading-8 text-slate-600">W&auml;hlen Sie den Umfang, der zur Projektlandschaft passt. Alle Preise verstehen sich zzgl. MwSt.</p>
+        </div>
+
+        <div class="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <article class="flex rounded-md border border-slate-200 bg-white p-6 shadow-soft">
+            <div class="flex w-full flex-col">
+              <h3 class="text-xl font-extrabold">Basis</h3>
+              <p class="mt-2 text-sm font-semibold text-slate-500">F&uuml;r einzelne Baustellen und unabh&auml;ngige Entwickler.</p>
+              <p class="mt-6"><span class="text-4xl font-extrabold">&euro;99</span><span class="font-semibold text-slate-500"> / Monat</span></p>
+              <ul class="mt-6 flex-1 space-y-3 text-sm leading-6 text-slate-600">
+                <li><i class="fa-solid fa-check mr-2 text-emerald-600" aria-hidden="true"></i>1 aktive Baustelle</li>
+                <li><i class="fa-solid fa-check mr-2 text-emerald-600" aria-hidden="true"></i>Bis zu 5 Subz&auml;hler</li>
+                <li><i class="fa-solid fa-check mr-2 text-emerald-600" aria-hidden="true"></i>Standard Excel-Import</li>
+                <li><i class="fa-solid fa-check mr-2 text-emerald-600" aria-hidden="true"></i>Automatische PDF-Erzeugung</li>
+              </ul>
+              <button type="button" data-event="CTA_Basis_Clicked" data-scroll-target="#lead-form" class="focus-ring mt-8 inline-flex h-12 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-5 text-sm font-extrabold text-slateInk transition hover:border-slateInk hover:bg-slate-50">
+                Basis-Beta beitreten
+              </button>
+            </div>
+          </article>
+
+          <article class="relative flex rounded-md border-2 border-foxOrange bg-slateInk p-6 text-white shadow-clean">
+            <div class="absolute right-4 top-4 rounded-md bg-foxOrange px-3 py-1 text-xs font-extrabold uppercase tracking-[0.14em] text-white">Beliebt</div>
+            <div class="flex w-full flex-col">
+              <h3 class="text-xl font-extrabold">Pro</h3>
+              <p class="mt-2 max-w-[15rem] text-sm font-semibold text-slate-300">F&uuml;r mittelst&auml;ndische Baufirmen mit mehreren aktiven Projekten.</p>
+              <p class="mt-6"><span class="text-4xl font-extrabold">&euro;249</span><span class="font-semibold text-slate-300"> / Monat</span></p>
+              <ul class="mt-6 flex-1 space-y-3 text-sm leading-6 text-slate-100">
+                <li><i class="fa-solid fa-check mr-2 text-orange-300" aria-hidden="true"></i>Bis zu 5 aktive Baustellen</li>
+                <li><i class="fa-solid fa-check mr-2 text-orange-300" aria-hidden="true"></i>Unbegrenzte Subz&auml;hler</li>
+                <li><i class="fa-solid fa-check mr-2 text-orange-300" aria-hidden="true"></i>Automatisches Wandlerfaktor-Mapping</li>
+                <li><i class="fa-solid fa-check mr-2 text-orange-300" aria-hidden="true"></i>Eigener Firmenbriefkopf</li>
+                <li><i class="fa-solid fa-check mr-2 text-orange-300" aria-hidden="true"></i>Priority E-Mail-Support</li>
+              </ul>
+              <button type="button" data-event="CTA_Pro_Clicked" data-scroll-target="#lead-form" class="focus-ring mt-8 inline-flex h-12 items-center justify-center gap-2 rounded-md bg-foxOrange px-5 text-sm font-extrabold text-white shadow-lg shadow-orange-500/25 transition hover:bg-orange-600">
+                Pro-Beta beitreten
+              </button>
+            </div>
+          </article>
+
+          <article class="flex rounded-md border border-slate-200 bg-white p-6 shadow-soft">
+            <div class="flex w-full flex-col">
+              <h3 class="text-xl font-extrabold">Enterprise</h3>
+              <p class="mt-2 text-sm font-semibold text-slate-500">F&uuml;r Generalunternehmer und kommunale Projekttr&auml;ger.</p>
+              <p class="mt-6"><span class="text-4xl font-extrabold">Individuell</span></p>
+              <ul class="mt-6 flex-1 space-y-3 text-sm leading-6 text-slate-600">
+                <li><i class="fa-solid fa-check mr-2 text-emerald-600" aria-hidden="true"></i>Unbegrenzte Baustellen-Skalierung</li>
+                <li><i class="fa-solid fa-check mr-2 text-emerald-600" aria-hidden="true"></i>Direkter SAP/DATEV-Zugang</li>
+                <li><i class="fa-solid fa-check mr-2 text-emerald-600" aria-hidden="true"></i>Automatisierte PDF-OCR der Hauptrechnungen</li>
+                <li><i class="fa-solid fa-check mr-2 text-emerald-600" aria-hidden="true"></i>Individuelle Betriebs- und Compliance-Anforderungen</li>
+              </ul>
+              <button type="button" data-event="CTA_Enterprise_Clicked" data-scroll-target="#lead-form" class="focus-ring mt-8 inline-flex h-12 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-5 text-sm font-extrabold text-slateInk transition hover:border-slateInk hover:bg-slate-50">
+                Angebot anfragen
+              </button>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="bg-slateInk py-16 text-white sm:py-20" aria-labelledby="final-cta-title">
+      <div class="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 sm:px-6 lg:grid-cols-[1fr_auto] lg:items-center lg:px-8">
+        <div>
+          <p class="text-sm font-extrabold uppercase tracking-[0.18em] text-orange-300">Bereit fuer die naechste Abrechnung?</p>
+          <h2 id="final-cta-title" class="mt-3 max-w-3xl text-3xl font-extrabold tracking-normal sm:text-4xl">Machen Sie aus einer 50.000-Euro-Hauptrechnung eine nachvollziehbare Kostenweiterleitung.</h2>
+          <p class="mt-4 max-w-2xl text-lg leading-8 text-slate-300">BaustromFuchs hilft Bauleitung und Backoffice, Stromkosten fair zu verteilen, ohne den bestehenden Excel-Ablauf aufzugeben.</p>
+        </div>
+        <button type="button" data-event="CTA_Final_Clicked" data-scroll-target="#lead-form" class="focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-md bg-foxOrange px-6 text-sm font-extrabold text-white shadow-lg shadow-orange-500/25 transition hover:bg-orange-600">
+          <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>
+          Zugang anfragen
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="bg-white py-8">
+    <div class="mx-auto flex max-w-7xl flex-col gap-4 px-4 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+      <p>&copy; 2026 BaustromFuchs</p>
+      <div class="flex gap-5">
+        <button type="button" data-modal-target="impressum-modal" class="focus-ring rounded-md font-bold text-slateInk transition hover:text-foxOrange">Impressum</button>
+        <button type="button" data-modal-target="datenschutz-modal" class="focus-ring rounded-md font-bold text-slateInk transition hover:text-foxOrange">Datenschutz</button>
+      </div>
+    </div>
+  </footer>
+
+  <div id="impressum-modal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="impressum-title">
+    <div class="modal-backdrop absolute inset-0 bg-slateInk/70 backdrop-blur-sm"></div>
+    <div class="relative mx-auto flex min-h-full max-w-3xl items-center px-4 py-8">
+      <div class="w-full rounded-md bg-white p-6 text-slateInk shadow-clean">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h2 id="impressum-title" class="text-2xl font-extrabold">Impressum</h2>
+          </div>
+          <button type="button" class="modal-close focus-ring grid h-10 w-10 place-items-center rounded-md border border-slate-200 text-slate-600 transition hover:bg-slate-50" aria-label="Impressum schliessen">
+            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="mt-6 space-y-4 leading-7 text-slate-600">
+          <p><strong>Angaben gemaess TMG</strong></p>
+          <p>Doga Baris Cakmak<br>Lahnstr. 15<br>50859 Koeln<br>Deutschland</p>
+          <p>E-Mail: <a href="mailto:dogabaris.cakmak@gmail.com" class="font-bold text-slateInk transition hover:text-foxOrange">dogabaris.cakmak@gmail.com</a><br>Telefon: <a href="tel:+491632621161" class="font-bold text-slateInk transition hover:text-foxOrange">+49 163 262 11 61</a></p>
+          <p>Verantwortlich fuer den Inhalt: Doga Baris Cakmak, Anschrift wie oben.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="datenschutz-modal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="datenschutz-title">
+    <div class="modal-backdrop absolute inset-0 bg-slateInk/70 backdrop-blur-sm"></div>
+    <div class="relative mx-auto flex min-h-full max-w-3xl items-center px-4 py-8">
+      <div class="w-full rounded-md bg-white p-6 text-slateInk shadow-clean">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <p class="text-sm font-extrabold uppercase tracking-[0.18em] text-foxOrange">Platzhalter</p>
+            <h2 id="datenschutz-title" class="mt-2 text-2xl font-extrabold">Datenschutz</h2>
+          </div>
+          <button type="button" class="modal-close focus-ring grid h-10 w-10 place-items-center rounded-md border border-slate-200 text-slate-600 transition hover:bg-slate-50" aria-label="Datenschutz schliessen">
+            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="mt-6 space-y-4 leading-7 text-slate-600">
+          <p><strong>Hinweis:</strong> Diese Datenschutzhinweise sind Platzhalter. Vor Produktivbetrieb muessen Verantwortlicher, Hosting, Formularanbieter, Analyse-Tools, Speicherdauer und Betroffenenrechte rechtlich geprueft und konkretisiert werden.</p>
+          <p>Wenn Sie das Kontaktformular nutzen, verarbeiten wir die angegebene E-Mail-Adresse ausschliesslich zur Bearbeitung Ihrer Anfrage. Rechtsgrundlage, Auftragsverarbeitung und Empfaenger sind final zu ergaenzen.</p>
+          <p>Fuer GitHub Pages und Formspark sind die jeweiligen Anbieterinformationen, Empfaenger, Datenuebermittlungen und Auftragsverarbeitungsdetails vor Livegang in die finale Datenschutzerklaerung aufzunehmen.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const body = document.body;
+      const siteHeader = document.getElementById('site-header');
+      let activeModal = null;
+      let lastFocusedElement = null;
+
+      function track(eventName) {
+        console.log(eventName);
+      }
+
+      function closeModal() {
+        if (!activeModal) return;
+        activeModal.classList.add('hidden');
+        body.classList.remove('modal-open');
+        if (lastFocusedElement) {
+          lastFocusedElement.focus();
+        }
+        activeModal = null;
+        lastFocusedElement = null;
+      }
+
+      function openModal(modal) {
+        if (!modal) return;
+        lastFocusedElement = document.activeElement;
+        activeModal = modal;
+        modal.classList.remove('hidden');
+        body.classList.add('modal-open');
+        const closeButton = modal.querySelector('.modal-close');
+        if (closeButton) {
+          closeButton.focus();
+        }
+      }
+
+      function updateHeaderState() {
+        if (!siteHeader) return;
+        siteHeader.classList.toggle('is-scrolled', window.scrollY > 48);
+      }
+
+      document.querySelectorAll('[data-event]').forEach((element) => {
+        element.addEventListener('click', () => {
+          const eventName = element.getAttribute('data-event');
+          const scrollTarget = element.getAttribute('data-scroll-target');
+          if (eventName) {
+            track(eventName);
+          }
+          if (scrollTarget) {
+            const target = document.querySelector(scrollTarget);
+            if (target) {
+              target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          }
+        });
+      });
+
+      const leadForm = document.getElementById('lead-form');
+      if (leadForm) {
+        const consentCheckbox = document.getElementById('consent');
+        const consentError = document.getElementById('consent-error');
+
+        if (consentCheckbox && consentError) {
+          consentCheckbox.addEventListener('change', () => {
+            if (consentCheckbox.checked) {
+              consentError.classList.add('hidden');
+              consentCheckbox.setCustomValidity('');
+            }
+          });
+        }
+
+        leadForm.addEventListener('submit', (event) => {
+          if (consentCheckbox && !consentCheckbox.checked) {
+            event.preventDefault();
+            if (consentError) {
+              consentError.classList.remove('hidden');
+            }
+            consentCheckbox.setCustomValidity('Bitte stimmen Sie der Verarbeitung zu, bevor Sie die Anfrage senden.');
+            consentCheckbox.reportValidity();
+            consentCheckbox.focus();
+            track('Lead_Form_Blocked_No_Consent');
+            return;
+          }
+
+          if (consentCheckbox) {
+            consentCheckbox.setCustomValidity('');
+          }
+          track('Lead_Form_Submitted');
+        });
+      }
+
+      document.querySelectorAll('[data-modal-target]').forEach((button) => {
+        button.addEventListener('click', () => {
+          openModal(document.getElementById(button.getAttribute('data-modal-target')));
+        });
+      });
+
+      document.querySelectorAll('.modal-close').forEach((button) => {
+        button.addEventListener('click', closeModal);
+      });
+
+      document.querySelectorAll('.modal-backdrop').forEach((backdrop) => {
+        backdrop.addEventListener('click', closeModal);
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          closeModal();
+        }
+      });
+
+      updateHeaderState();
+      window.addEventListener('scroll', updateHeaderState, { passive: true });
+    })();
+  </script>
+</body>
+</html>
